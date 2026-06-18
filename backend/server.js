@@ -53,7 +53,7 @@ const distPath = path.join(__dirname, '../frontend/dist');
 
 frontendApp.use(express.static(distPath));
 
-frontendApp.get('*', (req, res) => {
+frontendApp.use((req, res) => {
   res.sendFile(path.join(distPath, 'index.html'));
 });
 
