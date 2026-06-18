@@ -1,5 +1,7 @@
 const NodeMediaServer = require('node-media-server');
 const { Server } = require('socket.io');
+const express = require('express');
+const path = require('path');
 
 const config = {
   rtmp: {
@@ -43,4 +45,18 @@ io.on('connection', (socket) => {
     // Update viewers count when someone leaves
     io.emit('viewers', io.engine.clientsCount);
   });
+});
+
+// Dedicated Frontend Server on port 8865
+const frontendApp = express();
+const distPath = path.join(__dirname, '../frontend/dist');
+
+frontendApp.use(express.static(distPath));
+
+frontendApp.get('*', (req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
+});
+
+frontendApp.listen(8865, '0.0.0.0', () => {
+  console.log('Frontend server is running on port 8865');
 });
