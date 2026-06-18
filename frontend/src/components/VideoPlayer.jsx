@@ -12,17 +12,24 @@ const VideoPlayer = ({ streamUrl }) => {
       flvPlayer = flvjs.createPlayer({
         type: 'flv',
         isLive: true,
-        hasAudio: true,
         url: streamUrl,
+      }, {
+        enableWorker: false,
+        enableStashBuffer: false,
+        stashInitialSize: 128,
       });
 
       flvPlayer.attachMediaElement(videoElement);
       flvPlayer.load();
       
+      flvPlayer.on(flvjs.Events.ERROR, (errorType, errorDetail, errorInfo) => {
+        console.error('FLV.js Error:', errorType, errorDetail, errorInfo);
+      });
+
       const playPromise = flvPlayer.play();
       if (playPromise !== undefined) {
         playPromise.catch(error => {
-          console.log("Auto-play was prevented. User interaction required.");
+          console.error("Auto-play was prevented or failed:", error);
         });
       }
     }
