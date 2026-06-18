@@ -30,11 +30,6 @@ function App() {
       setMessages(historyMsgs);
     });
 
-    socket.on('chat:message', (msg) => {
-      setMessages((prev) => [...prev, msg]);
-    });
-    
-    // Fallback for our own custom chat_message event just in case
     socket.on('chat_message', (msg) => {
       setMessages((prev) => [...prev, msg]);
     });
@@ -45,7 +40,6 @@ function App() {
 
     return () => {
       socket.off('history');
-      socket.off('chat:message');
       socket.off('chat_message');
       socket.off('viewers');
     };
@@ -95,7 +89,6 @@ function App() {
       ts: Date.now()
     };
     socket.emit('chat_message', msg);
-    socket.emit('chat:message', msg); // support both
     setNewMessage('');
   };
 

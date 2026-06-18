@@ -17,12 +17,6 @@ io.on('connection', (socket) => {
   socket.on('chat_message', (msg) => {
     // Broadcast message to all connected clients
     io.emit('chat_message', msg);
-    io.emit('chat:message', msg); // support both formats
-  });
-
-  socket.on('chat:message', (msg) => {
-    io.emit('chat_message', msg);
-    io.emit('chat:message', msg);
   });
   
   socket.on('disconnect', () => {
