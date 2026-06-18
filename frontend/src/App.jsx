@@ -1,9 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 import VideoPlayer from './components/VideoPlayer';
 
 function App() {
-  // Assuming the user will stream to 'rtmp://localhost/live' with key 'test'
-  const streamUrl = 'http://localhost:8000/live/test.flv';
+  const [streamKeyInput, setStreamKeyInput] = useState('test');
+  const [activeStreamKey, setActiveStreamKey] = useState('test');
+
+  const streamUrl = `http://localhost:8000/live/${activeStreamKey}.flv`;
+
+  const handleConnect = (e) => {
+    e.preventDefault();
+    if (streamKeyInput.trim()) {
+      setActiveStreamKey(streamKeyInput.trim());
+    }
+  };
 
   return (
     <div className="layout-container">
@@ -11,6 +20,18 @@ function App() {
         <div className="logo">
           <span>▶</span> StreamHub
         </div>
+        
+        <form onSubmit={handleConnect} className="stream-key-form">
+          <input 
+            type="text" 
+            value={streamKeyInput} 
+            onChange={(e) => setStreamKeyInput(e.target.value)} 
+            placeholder="Enter stream key"
+            className="stream-key-input"
+          />
+          <button type="submit" className="btn-connect">Connect</button>
+        </form>
+
         <div className="live-badge">Live</div>
       </header>
 
@@ -46,7 +67,7 @@ function App() {
             <span className="chat-user">System:</span> Welcome to the live chat!
           </div>
           <div className="chat-message">
-            <span className="chat-user">System:</span> Start streaming on OBS to rtmp://localhost/live with stream key 'test'.
+            <span className="chat-user">System:</span> Start streaming on OBS to rtmp://localhost/live with stream key '{activeStreamKey}'.
           </div>
         </div>
         <div className="chat-input-container">
