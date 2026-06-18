@@ -5,7 +5,11 @@ import VideoPlayer from './components/VideoPlayer';
 const socket = io('http://localhost:8001');
 
 function App() {
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [username, setUsername] = useState(() => localStorage.getItem('wc26_username') || '');
+  const [isUsernameModalOpen, setIsUsernameModalOpen] = useState(!localStorage.getItem('wc26_username'));
+  const [usernameInput, setUsernameInput] = useState('');
+
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [serverUrlInput, setServerUrlInput] = useState('http://localhost:8000/live');
   const [streamKeyInput, setStreamKeyInput] = useState('test');
   
@@ -14,21 +18,36 @@ function App() {
     streamKey: 'test'
   });
 
-  const [messages, setMessages] = useState([
-    { id: 1, user: 'System', text: 'Welcome to the live chat!' }
-  ]);
+  const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
+  const [viewers, setViewers] = useState(0);
   const chatMessagesRef = useRef(null);
 
   const streamUrl = `${activeConfig.serverUrl}/${activeConfig.streamKey}.flv`;
 
   useEffect(() => {
+    socket.on('history', (historyMsgs) => {
+      setMessages(historyMsgs);
+    });
+
+    socket.on('chat:message', (msg) => {
+      setMessages((prev) => [...prev, msg]);
+    });
+    
+    // Fallback for our own custom chat_message event just in case
     socket.on('chat_message', (msg) => {
       setMessages((prev) => [...prev, msg]);
     });
 
+    socket.on('viewers', (count) => {
+      setViewers(count);
+    });
+
     return () => {
+      socket.off('history');
+      socket.off('chat:message');
       socket.off('chat_message');
+      socket.off('viewers');
     };
   }, []);
 
@@ -45,133 +64,162 @@ function App() {
         serverUrl: serverUrlInput.trim(),
         streamKey: streamKeyInput.trim()
       });
-      setIsSettingsOpen(false);
+      setIsSettingsModalOpen(false);
+    }
+  };
+
+  const handleSaveUsername = (e) => {
+    e.preventDefault();
+    if (usernameInput.trim()) {
+      const name = usernameInput.trim().slice(0, 24);
+      setUsername(name);
+      localStorage.setItem('wc26_username', name);
+      setIsUsernameModalOpen(false);
     }
   };
 
   const handleSendMessage = (e) => {
     e.preventDefault();
-    if (newMessage.trim()) {
-      const msg = {
-        id: Date.now(),
-        user: 'Guest' + Math.floor(Math.random() * 1000),
-        text: newMessage.trim()
-      };
-      socket.emit('chat_message', msg);
-      setNewMessage('');
+    if (!newMessage.trim()) return;
+    
+    if (!username) {
+      setIsUsernameModalOpen(true);
+      return;
     }
+
+    const msg = {
+      id: Date.now(),
+      username: username,
+      user: username, // backwards compatibility
+      text: newMessage.trim(),
+      ts: Date.now()
+    };
+    socket.emit('chat_message', msg);
+    socket.emit('chat:message', msg); // support both
+    setNewMessage('');
   };
 
   return (
     <>
-      {/* Dynamic Background Element */}
-      <div className="dynamic-bg">
-        <div className="bg-trophy-container">
-          <img 
-            src="https://upload.wikimedia.org/wikipedia/en/3/3b/FIFA_World_Cup_Trophy.svg" 
-            alt="World Cup Trophy" 
-            className="bg-trophy"
-          />
-        </div>
-      </div>
-      
-      <div className="layout-container">
-        <header className="header glass-panel">
-          <div className="logo">
-            <span style={{ color: 'var(--accent-color)' }}>⚽</span> FWC 26 Live
-          </div>
-          
-          <button className="btn-icon" onClick={() => setIsSettingsOpen(true)}>
-            ⚙️ Settings
-          </button>
+      <div className="bg-ripples" aria-hidden="true"></div>
+      <div className="bg-scrim" aria-hidden="true"></div>
 
-          <div className="live-badge">Live</div>
+      <div className="app">
+        <header className="topbar">
+          <div className="brand">
+            <span className="brand-mark">●</span>
+            <span className="brand-name">WC26<span className="brand-name-accent">LIVE</span></span>
+          </div>
+          <button className="btn-settings" onClick={() => setIsSettingsModalOpen(true)} type="button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Settings
+          </button>
+          <div className="live-badge">
+            <span className="live-dot"></span> LIVE
+          </div>
         </header>
 
-        {isSettingsOpen && (
-          <div className="modal-overlay">
-            <div className="modal-content glass-panel">
-              <div className="modal-header">
-                <h2>Stream Connection Settings</h2>
-                <button className="btn-close" onClick={() => setIsSettingsOpen(false)}>×</button>
-              </div>
-              <form onSubmit={handleSaveSettings} className="modal-body">
-                <div className="form-group">
-                  <label>Server URL</label>
-                  <input 
-                    type="text" 
-                    value={serverUrlInput} 
-                    onChange={(e) => setServerUrlInput(e.target.value)} 
-                    placeholder="e.g. http://localhost:8000/live"
-                    className="form-input"
-                    required
-                  />
+        <main className="layout">
+          <section className="stage">
+            <div className="player-wrap">
+              <VideoPlayer streamUrl={streamUrl} />
+              {!activeConfig.streamKey && (
+                <div className="player-overlay">
+                  <p>No stream configured.</p>
+                  <p className="muted">Enter stream URL in settings.</p>
                 </div>
-                <div className="form-group">
-                  <label>Stream Key</label>
-                  <input 
-                    type="text" 
-                    value={streamKeyInput} 
-                    onChange={(e) => setStreamKeyInput(e.target.value)} 
-                    placeholder="Enter stream key"
-                    className="form-input"
-                    required
-                  />
-                </div>
-                <div className="modal-footer">
-                  <button type="button" className="btn-secondary" onClick={() => setIsSettingsOpen(false)}>Cancel</button>
-                  <button type="submit" className="btn-primary">Save & Connect</button>
-                </div>
-              </form>
+              )}
             </div>
-          </div>
-        )}
 
-        <main className="main-content">
-          <div className="video-container">
-            <VideoPlayer streamUrl={streamUrl} />
-          </div>
-          
-          <div className="stream-info glass-panel">
-            <h1 className="stream-title">WE ARE 26 - Live Match Coverage</h1>
-            <div className="stream-meta">
-              <span>🏟️ World Cup 2026</span>
-              <span>👁️ 1.2M watching</span>
-            </div>
-            
-            <div className="streamer-info">
-              <div className="avatar">FIFA</div>
-              <div className="streamer-details">
-                <h3>Official Broadcaster</h3>
-                <p>USA | CAN | MEX</p>
+            <div className="info-card">
+              <h1 className="event-title">Live Match Coverage</h1>
+              <div className="meta-row">
+                <span className="meta-item">World Cup 2026</span>
+                <span className="meta-dot">•</span>
+                <span className="meta-item ticker">{viewers || '—'} watching</span>
               </div>
-              <button className="btn-subscribe">Follow Event</button>
+              <hr className="divider" />
+              <div className="broadcaster-row">
+                <div className="broadcaster-id">
+                  <div className="broadcaster-avatar">B</div>
+                  <div>
+                    <div className="broadcaster-name">Official Broadcast</div>
+                    <div className="broadcaster-sub muted">Streaming now</div>
+                  </div>
+                </div>
+                <button className="btn-follow" type="button">Follow event</button>
+              </div>
             </div>
-          </div>
+          </section>
+
+          <aside className="chat-panel">
+            <div className="chat-header">
+              <span>Live chat</span>
+              <span className="chat-viewer-pill">{viewers || '—'} online</span>
+            </div>
+            <div className="chat-messages" ref={chatMessagesRef} aria-live="polite">
+              {messages.map((msg, i) => (
+                <div key={msg.id || i} className="chat-message">
+                  <span className="author">{msg.username || msg.user}:</span>
+                  {msg.text}
+                </div>
+              ))}
+            </div>
+            <form className="chat-input-row" onSubmit={handleSendMessage}>
+              <input
+                className="chat-input"
+                type="text"
+                maxLength="300"
+                placeholder="Send a message…"
+                autoComplete="off"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+              />
+              <button className="chat-send" type="submit" aria-label="Send message">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+              </button>
+            </form>
+          </aside>
         </main>
-
-        <aside className="sidebar glass-panel">
-          <div className="chat-header">
-            Live Chat
-          </div>
-          <div className="chat-messages" ref={chatMessagesRef}>
-            {messages.map((msg) => (
-              <div key={msg.id} className="chat-message">
-                <span className="chat-user">{msg.user}:</span> {msg.text}
-              </div>
-            ))}
-          </div>
-          <form className="chat-input-container" onSubmit={handleSendMessage}>
-            <input 
-              type="text" 
-              className="chat-input" 
-              placeholder="Send a message..." 
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-            />
-          </form>
-        </aside>
       </div>
+
+      {isUsernameModalOpen && (
+        <div className="modal-backdrop">
+          <form className="modal" onSubmit={handleSaveUsername}>
+            <h2>Join the live chat</h2>
+            <p className="muted">Pick a display name. It's stored only in this browser.</p>
+            <input 
+              className="modal-input" 
+              type="text" 
+              maxLength="24" 
+              placeholder="Display name" 
+              value={usernameInput}
+              onChange={(e) => setUsernameInput(e.target.value)}
+              required
+            />
+            <button className="btn-primary" type="submit">Join chat</button>
+          </form>
+        </div>
+      )}
+
+      {isSettingsModalOpen && (
+        <div className="modal-backdrop">
+          <form className="modal" onSubmit={handleSaveSettings}>
+            <div className="modal-head">
+              <h2>Settings</h2>
+              <button className="modal-close" onClick={() => setIsSettingsModalOpen(false)} type="button" aria-label="Close settings">✕</button>
+            </div>
+
+            <label className="field-label">Server URL</label>
+            <input className="modal-input" type="text" value={serverUrlInput} onChange={(e) => setServerUrlInput(e.target.value)} required />
+
+            <label className="field-label">Stream Key</label>
+            <input className="modal-input" type="text" value={streamKeyInput} onChange={(e) => setStreamKeyInput(e.target.value)} required />
+
+            <button className="btn-primary" style={{ marginTop: '16px' }} type="submit">Save settings</button>
+          </form>
+        </div>
+      )}
     </>
   );
 }

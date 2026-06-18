@@ -48,7 +48,7 @@ const VideoPlayer = ({ streamUrl }) => {
   return (
     <video
       ref={videoRef}
-      className="video-element"
+      className="player"
       controls
       muted
       autoPlay
