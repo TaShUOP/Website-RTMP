@@ -1,57 +1,95 @@
-# RTMP Live Streaming Website
+# WC26 Live - RTMP Streaming Website
 
-This project is a full-stack live streaming platform that allows you to ingest an RTMP stream (e.g., from OBS Studio) and display it in a modern, premium web interface with very low latency.
+This project is a full-stack live streaming platform that allows you to ingest an RTMP stream (e.g., from OBS Studio) and display it in a stunning, World Cup 2026 themed web interface with real-time live chat.
 
 ## What's in this Project
 
 The repository is divided into two main parts:
 
-1. **Backend (`/backend`)**: A lightweight Node.js media server built with `node-media-server`. It ingests the incoming RTMP stream and transcodes/repackages it on the fly into an HTTP-FLV stream, which is playable in modern web browsers.
-2. **Frontend (`/frontend`)**: A React web application powered by Vite. It features a custom-designed, dark-mode user interface with glassmorphism effects, mimicking professional streaming platforms like Twitch or YouTube. It uses `flv.js` to receive and play the HTTP-FLV video stream.
+1. **Backend (`/backend`)**: A Node.js media server built with `node-media-server` and `socket.io`. It ingests the incoming RTMP stream on port `3343` and transcodes/repackages it on the fly into an HTTP-FLV stream. It also powers the real-time Live Chat API on port `3342` and can serve the frontend statically on port `8865`.
+2. **Frontend (`/frontend`)**: A React web application powered by Vite. It features a custom-designed, World Cup 2026 themed interface (dark mode, neon concentric backgrounds, glassmorphism). It uses `flv.js` for ultra-low latency video playback and `socket.io-client` for live chat.
 
-## How it was Created
+---
 
-- **Backend**: Initialized as a standard Node.js project (`npm init -y`) and installed the `node-media-server` package to handle the heavy lifting of the RTMP protocol and FLV packaging. A `server.js` script was written to configure the ports and enable CORS.
-- **Frontend**: Scaffolding was done using Vite (`npm create vite@latest frontend --template react`). The core video playback was implemented by integrating the `flv.js` library into a custom `<VideoPlayer />` React component. The UI was styled completely from scratch using modern CSS tokens, flexbox/grid layouts, and responsive design principles.
+## 🚀 How to Run It
 
-## How to Run It
+You have two options to run this project: **Manual Installation** (great for development or if you don't use Docker) or **Docker** (recommended for quick production deployments).
 
-To run this application locally, you will need Node.js installed on your machine and a broadcasting software like OBS Studio.
+### Option A: Manual Installation (Standard)
 
-### 1. Start the Media Server (Backend)
+To run this application locally without Docker, you will need Node.js installed on your machine.
 
+**1. Start the Media Server (Backend)**
 Open a terminal window and start the Node backend:
-
 ```bash
 cd backend
 npm install
 node server.js
 ```
+*You should see output confirming that the Node Media Server is running and listening on port `3343` (for RTMP capturing) and port `3342` (for HTTP streaming and Chat).*
 
-You should see output confirming that the Node Media Server is running and listening on port `1935` (for RTMP) and port `8000` (for HTTP).
-
-### 2. Start the Web App (Frontend)
-
+**2. Start the Web App (Frontend)**
 Open a second terminal window and start the Vite development server:
-
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
+*Your browser should automatically open, or you can navigate to `http://localhost:8865`.*
 
-Your browser should automatically open, or you can navigate to the local URL provided in the terminal (usually `http://localhost:5173`).
+---
 
-### 3. Start Streaming
+### Option B: Run with Docker 🐳
 
-Now, configure your broadcasting software to send video to the server.
+The entire application is fully containerized. Running it via Docker automatically builds the frontend and spins up the required backend servers internally without you needing to manage Node.js versions or run separate terminal windows.
 
-**Using OBS Studio:**
+**1. Build the Docker Image**
+Open your terminal in the root of the project and run:
+```bash
+docker build -t wc26-live .
+```
+
+**2. Run the Container**
+```bash
+docker run -p 8865:8865 -p 3342:3342 -p 3343:3343 -d wc26-live
+```
+*Navigate your browser to `http://localhost:8865` to view the site.*
+
+---
+
+## 🎥 How to Start Streaming (OBS Studio)
+
+No matter which method you used to start the server, you can stream to it using broadcasting software like OBS:
+
 1. Open OBS Studio.
 2. Go to **Settings** > **Stream**.
 3. Under **Service**, select `Custom...`.
-4. Set **Server** to: `rtmp://localhost/live`
-5. Set **Stream Key** to: `test`
+4. Set **Server** to: `rtmp://localhost:3343/live` *(Replace localhost with the server IP if hosting remotely)*
+5. Set **Stream Key** to: `test` (or whatever key you prefer)
 6. Click **Apply** and then click the **Start Streaming** button on the main OBS window.
 
-Go back to your React web app in the browser. You should now see your live stream playing smoothly!
+---
+
+## 🛠️ Server Owner Configuration
+
+### Changing the Default Stream URL for Viewers
+
+By default, the web interface attempts to connect to the video stream and chat via `localhost`. If you are hosting this server on a public IP address or a domain name, you should change the default connection strings in the code. **This ensures your viewers don't have to manually open the Settings panel and type your IP address every time they visit the website!**
+
+**How to permanently change the default URL:**
+
+1. Open the file: `frontend/src/App.jsx`
+2. Update the `socket.io` connection URL at the very top of the file to point to your public address:
+   ```javascript
+   const socket = io('http://your-public-ip-or-domain:3342');
+   ```
+3. Locate the `activeConfig` state block near line 17 and update the default values:
+   ```javascript
+   const [activeConfig, setActiveConfig] = useState({
+     serverUrl: 'http://your-public-ip-or-domain:3342/live',
+     streamKey: 'your-stream-key'
+   });
+   ```
+4. **Apply Changes**: 
+   - If running **manually**, simply refresh your browser (Vite will auto-reload).
+   - If using **Docker**, rebuild your Docker image (`docker build -t wc26-live .`) to bake these new URLs into the static frontend files!
