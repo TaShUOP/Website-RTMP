@@ -41,18 +41,24 @@ npm run dev
 
 ### Option B: Run with Docker 🐳
 
-The entire application is fully containerized. Running it via Docker automatically builds the frontend and spins up the required backend servers internally without you needing to manage Node.js versions or run separate terminal windows.
+The entire application is fully containerized. You can either use the pre-built image from Docker Hub or build it yourself!
 
-**1. Build the Docker Image**
+**Method 1: Use the Pre-built Image (Fastest)**
+You can instantly download and run the latest pre-built image without downloading the code:
+```bash
+docker run -p 8865:8865 -p 3342:3342 -p 3343:3343 -p 3344:3344 -d 0xtashuop/wc26-live:latest
+```
+
+**Method 2: Build it Yourself**
 Open your terminal in the root of the project and run:
 ```bash
 docker build -t wc26-live .
 ```
-
-**2. Run the container (mapping ports 8865, 3342, 3343, and 3344)**
+Then run your locally built container:
 ```bash
 docker run -p 8865:8865 -p 3342:3342 -p 3343:3343 -p 3344:3344 -d wc26-live
 ```
+
 *Navigate your browser to `http://localhost:8865` to view the site.*
 
 ---
