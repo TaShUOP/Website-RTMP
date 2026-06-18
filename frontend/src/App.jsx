@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import VideoPlayer from './components/VideoPlayer';
-
-const socket = io('http://localhost:3344');
+// Socket will be initialized dynamically inside the component
 
 function App() {
   const [username, setUsername] = useState(() => localStorage.getItem('wc26_username') || '');
@@ -11,12 +10,22 @@ function App() {
 
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [serverUrlInput, setServerUrlInput] = useState('http://localhost:3342/live');
+  const [socketUrlInput, setSocketUrlInput] = useState('http://localhost:3344');
   const [streamKeyInput, setStreamKeyInput] = useState('test');
   
   const [activeConfig, setActiveConfig] = useState({
     serverUrl: 'http://localhost:3342/live',
+    socketUrl: 'http://localhost:3344',
     streamKey: 'test'
   });
+
+  const [socket, setSocket] = useState(null);
+
+  useEffect(() => {
+    const newSocket = io(activeConfig.socketUrl);
+    setSocket(newSocket);
+    return () => newSocket.close();
+  }, [activeConfig.socketUrl]);
 
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
@@ -26,6 +35,8 @@ function App() {
   const streamUrl = `${activeConfig.serverUrl}/${activeConfig.streamKey}.flv`;
 
   useEffect(() => {
+    if (!socket) return;
+
     socket.on('history', (historyMsgs) => {
       setMessages(historyMsgs);
     });
@@ -43,7 +54,7 @@ function App() {
       socket.off('chat_message');
       socket.off('viewers');
     };
-  }, []);
+  }, [socket]);
 
   useEffect(() => {
     if (chatMessagesRef.current) {
@@ -53,9 +64,10 @@ function App() {
 
   const handleSaveSettings = (e) => {
     e.preventDefault();
-    if (serverUrlInput.trim() && streamKeyInput.trim()) {
+    if (serverUrlInput.trim() && streamKeyInput.trim() && socketUrlInput.trim()) {
       setActiveConfig({
         serverUrl: serverUrlInput.trim(),
+        socketUrl: socketUrlInput.trim(),
         streamKey: streamKeyInput.trim()
       });
       setIsSettingsModalOpen(false);
@@ -88,7 +100,9 @@ function App() {
       text: newMessage.trim(),
       ts: Date.now()
     };
-    socket.emit('chat_message', msg);
+    if (socket) {
+      socket.emit('chat_message', msg);
+    }
     setNewMessage('');
   };
 
@@ -203,11 +217,14 @@ function App() {
               <button className="modal-close" onClick={() => setIsSettingsModalOpen(false)} type="button" aria-label="Close settings">✕</button>
             </div>
 
-            <label className="field-label">Server URL</label>
+            <label className="field-label">Stream URL</label>
             <input className="modal-input" type="text" value={serverUrlInput} onChange={(e) => setServerUrlInput(e.target.value)} required />
 
             <label className="field-label">Stream Key</label>
             <input className="modal-input" type="text" value={streamKeyInput} onChange={(e) => setStreamKeyInput(e.target.value)} required />
+
+            <label className="field-label">Chat/Socket URL</label>
+            <input className="modal-input" type="text" value={socketUrlInput} onChange={(e) => setSocketUrlInput(e.target.value)} required />
 
             <button className="btn-primary" style={{ marginTop: '16px' }} type="submit">Save settings</button>
           </form>
