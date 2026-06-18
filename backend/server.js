@@ -11,14 +11,24 @@ const io = new Server(8001, {
 
 io.on('connection', (socket) => {
   console.log('User connected to chat');
+  // Broadcast the number of connected clients to all clients
+  io.emit('viewers', io.engine.clientsCount);
   
   socket.on('chat_message', (msg) => {
     // Broadcast message to all connected clients
     io.emit('chat_message', msg);
+    io.emit('chat:message', msg); // support both formats
+  });
+
+  socket.on('chat:message', (msg) => {
+    io.emit('chat_message', msg);
+    io.emit('chat:message', msg);
   });
   
   socket.on('disconnect', () => {
     console.log('User disconnected');
+    // Update viewers count when someone leaves
+    io.emit('viewers', io.engine.clientsCount);
   });
 });
 
