@@ -6,7 +6,7 @@ This project is a full-stack live streaming platform that allows you to ingest a
 
 The repository is divided into two main parts:
 
-1. **Backend (`/backend`)**: A Node.js media server built with `node-media-server` and `socket.io`. It ingests the incoming RTMP stream on port `3343` and transcodes/repackages it on the fly into an HTTP-FLV stream. It also powers the real-time Live Chat API on port `3342` and can serve the frontend statically on port `8865`.
+1. **Backend (`/backend`)**: A Node.js media server built with `node-media-server` and `socket.io`. It ingests the incoming RTMP stream on port `3343` and transcodes/repackages it on the fly into an HTTP-FLV stream (port `3342`). It also powers the real-time Live Chat API independently on port `3344` and acts as the production web server serving the frontend on port `8865`.
 2. **Frontend (`/frontend`)**: A React web application powered by Vite. It features a custom-designed, World Cup 2026 themed interface (dark mode, neon concentric backgrounds, glassmorphism). It uses `flv.js` for ultra-low latency video playback and `socket.io-client` for live chat.
 
 ---
@@ -49,9 +49,9 @@ Open your terminal in the root of the project and run:
 docker build -t wc26-live .
 ```
 
-**2. Run the Container**
+**2. Run the container (mapping ports 8865, 3342, 3343, and 3344)**
 ```bash
-docker run -p 8865:8865 -p 3342:3342 -p 3343:3343 -d wc26-live
+docker run -p 8865:8865 -p 3342:3342 -p 3343:3343 -p 3344:3344 -d wc26-live
 ```
 *Navigate your browser to `http://localhost:8865` to view the site.*
 
@@ -81,7 +81,7 @@ By default, the web interface attempts to connect to the video stream and chat v
 1. Open the file: `frontend/src/App.jsx`
 2. Update the `socket.io` connection URL at the very top of the file to point to your public address:
    ```javascript
-   const socket = io('http://your-public-ip-or-domain:3342');
+   const socket = io('http://your-public-ip-or-domain:3344');
    ```
 3. Locate the `activeConfig` state block near line 17 and update the default values:
    ```javascript

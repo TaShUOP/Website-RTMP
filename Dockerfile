@@ -21,9 +21,10 @@ COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist
 
 # Expose required ports
 # 8865: Dedicated Frontend Server
-# 3342: Backend HTTP-FLV Streaming and Socket.IO Chat
+# 3342: Backend HTTP-FLV Streaming
 # 3343: RTMP Capturing (OBS)
-EXPOSE 8865 3342 3343
+# 3344: Live Chat Socket
+EXPOSE 8865 3342 3343 3344
 
 # Start the server
 CMD ["node", "server.js"]

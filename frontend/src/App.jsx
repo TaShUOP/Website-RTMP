@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import VideoPlayer from './components/VideoPlayer';
 
-const socket = io('http://localhost:3342');
+const socket = io('http://localhost:3344');
 
 function App() {
   const [username, setUsername] = useState(() => localStorage.getItem('wc26_username') || '');

@@ -22,8 +22,8 @@ const config = {
 const nms = new NodeMediaServer(config);
 nms.run();
 
-// Socket.IO Server attached to the NodeMediaServer HTTP Server (port 3342)
-const io = new Server(nms.nhs.server, {
+// Socket.IO Server on an independent port (3344)
+const io = new Server(3344, {
   cors: {
     origin: "*",
     methods: ["GET", "POST"]
