@@ -25,10 +25,22 @@ function App() {
   };
 
   return (
-    <div className="layout-container">
-      <header className="header glass-panel">
+    <>
+      {/* Dynamic Background Element */}
+      <div className="dynamic-bg">
+        <div className="bg-trophy-container">
+          <img 
+            src="https://upload.wikimedia.org/wikipedia/en/3/3b/FIFA_World_Cup_Trophy.svg" 
+            alt="World Cup Trophy" 
+            className="bg-trophy"
+          />
+        </div>
+      </div>
+      
+      <div className="layout-container">
+        <header className="header glass-panel">
         <div className="logo">
-          <span>▶</span> StreamHub
+          <span style={{ color: 'var(--accent-color)' }}>⚽</span> FWC 26 Live
         </div>
         
         <button className="btn-icon" onClick={() => setIsSettingsOpen(true)}>
@@ -83,19 +95,19 @@ function App() {
         </div>
         
         <div className="stream-info glass-panel">
-          <h1 className="stream-title">Testing Live Stream with OBS</h1>
+          <h1 className="stream-title">WE ARE 26 - Live Match Coverage</h1>
           <div className="stream-meta">
-            <span>🎮 Just Chatting</span>
-            <span>👁️ 1 watching</span>
+            <span>🏟️ World Cup 2026</span>
+            <span>👁️ 1.2M watching</span>
           </div>
           
           <div className="streamer-info">
-            <div className="avatar">YOU</div>
+            <div className="avatar">FIFA</div>
             <div className="streamer-details">
-              <h3>Local Streamer</h3>
-              <p>1 Subscriber</p>
+              <h3>Official Broadcaster</h3>
+              <p>USA | CAN | MEX</p>
             </div>
-            <button className="btn-subscribe">Subscribe</button>
+            <button className="btn-subscribe">Follow Event</button>
           </div>
         </div>
       </main>
@@ -120,6 +132,7 @@ function App() {
         </div>
       </aside>
     </div>
+    </>
   );
 }
 
