@@ -1,8 +1,27 @@
 const NodeMediaServer = require('node-media-server');
 const { Server } = require('socket.io');
 
-// Socket.IO Server on port 8001
-const io = new Server(8001, {
+const config = {
+  rtmp: {
+    port: 3343, // Capturing from OBS
+    chunk_size: 60000,
+    gop_cache: true,
+    ping: 30,
+    ping_timeout: 60,
+    host: '0.0.0.0'
+  },
+  http: {
+    port: 3342, // HTTP Streaming (FLV) and API
+    allow_origin: '*',
+    host: '0.0.0.0'
+  }
+};
+
+const nms = new NodeMediaServer(config);
+nms.run();
+
+// Socket.IO Server attached to the NodeMediaServer HTTP Server (port 3342)
+const io = new Server(nms.nhs.server, {
   cors: {
     origin: "*",
     methods: ["GET", "POST"]
@@ -25,20 +44,3 @@ io.on('connection', (socket) => {
     io.emit('viewers', io.engine.clientsCount);
   });
 });
-
-const config = {
-  rtmp: {
-    port: 1935,
-    chunk_size: 60000,
-    gop_cache: true,
-    ping: 30,
-    ping_timeout: 60
-  },
-  http: {
-    port: 8000,
-    allow_origin: '*' // Allow CORS for the frontend React app
-  }
-};
-
-const nms = new NodeMediaServer(config);
-nms.run();

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import VideoPlayer from './components/VideoPlayer';
 
-const socket = io('http://localhost:8001');
+const socket = io('http://localhost:3342');
 
 function App() {
   const [username, setUsername] = useState(() => localStorage.getItem('wc26_username') || '');
@@ -10,11 +10,11 @@ function App() {
   const [usernameInput, setUsernameInput] = useState('');
 
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [serverUrlInput, setServerUrlInput] = useState('http://localhost:8000/live');
+  const [serverUrlInput, setServerUrlInput] = useState('http://localhost:3342/live');
   const [streamKeyInput, setStreamKeyInput] = useState('test');
   
   const [activeConfig, setActiveConfig] = useState({
-    serverUrl: 'http://localhost:8000/live',
+    serverUrl: 'http://localhost:3342/live',
     streamKey: 'test'
   });
 
