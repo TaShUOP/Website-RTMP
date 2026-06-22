@@ -39,20 +39,23 @@ const VideoPlayer = ({ streamUrl }) => {
     else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
       const loadHls = () => {
         videoElement.src = hlsUrl;
+        videoElement.load(); // explicitly tell iOS to load the new src
         const playPromise = videoElement.play();
         if (playPromise !== undefined) {
           playPromise.catch(error => console.error("HLS Auto-play prevented:", error));
         }
       };
 
-      // Native video element doesn't automatically retry 404s.
-      // FFmpeg takes a few seconds to generate the .m3u8 file when the stream starts.
-      videoElement.onerror = () => {
+      const handleError = () => {
         console.log("HLS stream not ready yet, retrying in 3 seconds...");
         hlsRetryTimeout = setTimeout(loadHls, 3000);
       };
 
+      videoElement.addEventListener('error', handleError);
       loadHls();
+
+      // Ensure we remove the error listener when cleaning up
+      videoElement._handleError = handleError;
     }
 
     return () => {
@@ -69,6 +72,9 @@ const VideoPlayer = ({ streamUrl }) => {
       
       // Cleanup for native HLS
       if (videoElement) {
+        if (videoElement._handleError) {
+          videoElement.removeEventListener('error', videoElement._handleError);
+        }
         videoElement.removeAttribute('src');
         videoElement.load();
       }
@@ -82,6 +88,7 @@ const VideoPlayer = ({ streamUrl }) => {
       controls
       muted
       autoPlay
+      playsInline
     />
   );
 };
