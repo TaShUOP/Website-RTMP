@@ -5,10 +5,20 @@ const VideoPlayer = ({ streamUrl }) => {
   const videoRef = useRef(null);
 
   useEffect(() => {
+    const videoElement = videoRef.current;
+    const hlsUrl = streamUrl.replace('.flv', '/index.m3u8');
     let flvPlayer = null;
 
-    if (flvjs.isSupported()) {
-      const videoElement = videoRef.current;
+    // 1. Native HLS Support (iOS / iPhones / Safari)
+    if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+      videoElement.src = hlsUrl;
+      const playPromise = videoElement.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => console.error("HLS Auto-play prevented:", error));
+      }
+    } 
+    // 2. FLV.js Support (Desktop / Android / Chrome / Firefox)
+    else if (flvjs.isSupported()) {
       flvPlayer = flvjs.createPlayer({
         type: 'flv',
         isLive: true,
@@ -28,9 +38,7 @@ const VideoPlayer = ({ streamUrl }) => {
 
       const playPromise = flvPlayer.play();
       if (playPromise !== undefined) {
-        playPromise.catch(error => {
-          console.error("Auto-play was prevented or failed:", error);
-        });
+        playPromise.catch(error => console.error("FLV Auto-play prevented:", error));
       }
     }
 
@@ -41,6 +49,12 @@ const VideoPlayer = ({ streamUrl }) => {
         flvPlayer.detachMediaElement();
         flvPlayer.destroy();
         flvPlayer = null;
+      }
+      
+      // Cleanup for native HLS
+      if (videoElement) {
+        videoElement.removeAttribute('src');
+        videoElement.load();
       }
     };
   }, [streamUrl]);

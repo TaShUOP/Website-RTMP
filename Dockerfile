@@ -10,6 +10,9 @@ RUN npm run build
 FROM node:22-alpine
 WORKDIR /app
 
+# Install FFmpeg for HLS transcoding
+RUN apk add --no-cache ffmpeg
+
 # Copy backend files and install dependencies
 COPY backend/package*.json ./backend/
 WORKDIR /app/backend

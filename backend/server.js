@@ -13,9 +13,21 @@ const config = {
     host: '0.0.0.0'
   },
   http: {
-    port: 3342, // HTTP Streaming (FLV) and API
+    port: 3342, // HTTP Streaming (FLV and HLS) and API
     allow_origin: '*',
-    host: '0.0.0.0'
+    host: '0.0.0.0',
+    mediaroot: './media'
+  },
+  trans: {
+    ffmpeg: 'ffmpeg', // requires ffmpeg installed in system PATH or container
+    tasks: [
+      {
+        app: 'live',
+        hls: true,
+        hlsFlags: '[hls_time=2:hls_list_size=3:hls_flags=delete_segments]',
+        hlsKeep: false // Deletes old segments to save disk space
+      }
+    ]
   }
 };
 
