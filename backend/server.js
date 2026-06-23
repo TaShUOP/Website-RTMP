@@ -17,22 +17,48 @@ const config = {
     allow_origin: '*',
     host: '0.0.0.0',
     mediaroot: path.join(__dirname, 'media')
-  },
-  trans: {
-    ffmpeg: '/usr/bin/ffmpeg', // Use absolute path for Alpine Linux
-    tasks: [
-      {
-        app: 'live',
-        hls: true,
-        hlsFlags: '[hls_time=2:hls_list_size=3:hls_flags=delete_segments]',
-        hlsKeep: false // Deletes old segments to save disk space
-      }
-    ]
   }
 };
 
 const nms = new NodeMediaServer(config);
 nms.run();
+
+const { spawn } = require('child_process');
+const fs = require('fs');
+const ffmpegProcesses = new Map();
+
+nms.on('postPublish', (id, StreamPath, args) => {
+  console.log(`[HLS] Stream started on ${StreamPath}. Spawning FFmpeg...`);
+  
+  // Create output directory for HLS segments (e.g. ./media/live/test)
+  const hlsDir = path.join(__dirname, 'media', StreamPath);
+  fs.mkdirSync(hlsDir, { recursive: true });
+  
+  const ffmpegCmd = spawn('ffmpeg', [
+    '-i', `rtmp://127.0.0.1:3343${StreamPath}`,
+    '-c:v', 'copy',
+    '-c:a', 'copy',
+    '-f', 'hls',
+    '-hls_time', '2',
+    '-hls_list_size', '3',
+    '-hls_flags', 'delete_segments',
+    path.join(hlsDir, 'index.m3u8')
+  ]);
+
+  ffmpegCmd.on('close', (code) => {
+    console.log(`[HLS] FFmpeg closed with code ${code}`);
+  });
+
+  ffmpegProcesses.set(id, ffmpegCmd);
+});
+
+nms.on('donePublish', (id, StreamPath, args) => {
+  if (ffmpegProcesses.has(id)) {
+    console.log(`[HLS] Stream ended on ${StreamPath}. Killing FFmpeg...`);
+    ffmpegProcesses.get(id).kill();
+    ffmpegProcesses.delete(id);
+  }
+});
 
 // Socket.IO Server on an independent port (3344)
 const io = new Server(3344, {
