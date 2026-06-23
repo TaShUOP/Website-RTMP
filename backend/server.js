@@ -16,7 +16,7 @@ const config = {
     port: 3342, // HTTP Streaming (FLV and HLS) and API
     allow_origin: '*',
     host: '0.0.0.0',
-    mediaroot: './media'
+    mediaroot: path.join(__dirname, 'media')
   },
   trans: {
     ffmpeg: '/usr/bin/ffmpeg', // Use absolute path for Alpine Linux
