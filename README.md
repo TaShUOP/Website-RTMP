@@ -2,12 +2,19 @@
 
 This project is a full-stack live streaming platform that allows you to ingest an RTMP stream (e.g., from OBS Studio) and display it in a stunning, World Cup 2026 themed web interface with real-time live chat.
 
+## ⚙️ How It Works
+
+1. **Broadcaster**: A user streams video from OBS Studio to the Node Media Server via RTMP (`rtmp://<ip>:3343/live/your-key`).
+2. **Media Server**: The Node Media Server receives the RTMP stream and serves it out using HTTP-FLV over port 3342.
+3. **Frontend App**: The React application uses `flv.js` to natively decode and play the live video stream in the browser with near-zero latency.
+4. **Chat & Metrics**: Socket.io handles real-time chat messages and tracks active viewer counts across all connected clients.
+
 ## What's in this Project
 
 The repository is divided into two main parts:
 
-1. **Backend (`/backend`)**: A Node.js media server built with `node-media-server` and `socket.io`. It ingests the incoming RTMP stream on port `3343` and automatically packages it on the fly into an **HLS playlist** using FFmpeg. It also powers the real-time Live Chat API independently on port `3344` and acts as the production web server serving the frontend on port `8865`.
-2. **Frontend (`/frontend`)**: A React web application powered by Vite. It features a custom-designed, World Cup 2026 themed interface (dark mode, neon concentric backgrounds, glassmorphism). It uses **`hls.js`** for unified, stable video playback across Desktop and Android, and automatically falls back to native HLS for iOS devices (iPhone/iPad).
+1. **Backend (`/backend`)**: A Node.js media server built with `node-media-server` and `socket.io`. It ingests the incoming RTMP stream on port `3343` and serves it via HTTP-FLV. It also powers the real-time Live Chat API independently on port `3344` and acts as the production web server serving the frontend on port `8865`.
+2. **Frontend (`/frontend`)**: A React web application powered by Vite. It features a custom-designed, World Cup 2026 themed interface (dark mode, neon concentric backgrounds, glassmorphism). It uses **`flv.js`** for low-latency live video playback.
 
 ---
 

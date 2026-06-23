@@ -22,69 +22,12 @@ const config = {
 const nms = new NodeMediaServer(config);
 nms.run();
 
-const { spawn } = require('child_process');
-const fs = require('fs');
-const ffmpegProcesses = new Map();
-
-const startFfmpeg = (id, StreamPath, retries = 5) => {
-  if (retries === 0) {
-    console.log(`[HLS] FFmpeg failed too many times for ${StreamPath}. Giving up.`);
-    return;
-  }
-
-  const hlsDir = path.join(__dirname, 'media', StreamPath);
-  fs.mkdirSync(hlsDir, { recursive: true });
-  
-  console.log(`[HLS] Spawning FFmpeg for ${StreamPath} (Retries left: ${retries})...`);
-  const ffmpegCmd = spawn('/usr/bin/ffmpeg', [
-    '-i', `rtmp://127.0.0.1:3343${StreamPath}`,
-    '-c:v', 'copy',
-    '-c:a', 'copy',
-    '-f', 'hls',
-    '-hls_time', '2',
-    '-hls_list_size', '3',
-    '-hls_flags', 'delete_segments',
-    path.join(hlsDir, 'index.m3u8')
-  ]);
-
-  ffmpegCmd.stderr.on('data', (data) => {
-    // FFmpeg writes everything to stderr. Log it so we can debug if it crashes.
-    console.log(`[FFmpeg] ${data.toString().trim()}`);
-  });
-
-  ffmpegCmd.on('close', (code) => {
-    console.log(`[HLS] FFmpeg closed with code ${code}`);
-    // If it crashed (code !== 0) and wasn't manually killed (code !== 255), retry.
-    if (code !== 0 && code !== 255 && ffmpegProcesses.has(id)) {
-      console.log(`[HLS] FFmpeg crashed. Retrying in 2 seconds...`);
-      setTimeout(() => startFfmpeg(id, StreamPath, retries - 1), 2000);
-    }
-  });
-
-  ffmpegProcesses.set(id, ffmpegCmd);
-};
-
 nms.on('postPublish', (session) => {
-  const StreamPath = session.streamPath;
-  const id = session.id;
-  
-  console.log(`[HLS] Stream published on ${StreamPath}. Waiting 1.5s for RTMP to stabilize...`);
-  
-  // Wait 1.5 seconds to ensure the RTMP stream is fully initialized before FFmpeg tries to read it
-  setTimeout(() => {
-    startFfmpeg(id, StreamPath);
-  }, 1500);
+  console.log(`[RTMP] Stream published on ${session.streamPath}`);
 });
 
 nms.on('donePublish', (session) => {
-  const StreamPath = session.streamPath;
-  const id = session.id;
-
-  if (ffmpegProcesses.has(id)) {
-    console.log(`[HLS] Stream ended on ${StreamPath}. Killing FFmpeg...`);
-    ffmpegProcesses.get(id).kill();
-    ffmpegProcesses.delete(id);
-  }
+  console.log(`[RTMP] Stream ended on ${session.streamPath}`);
 });
 
 // Socket.IO Server on an independent port (3344)
@@ -115,10 +58,6 @@ io.on('connection', (socket) => {
 // Serve Frontend (Port 8865)
 const frontendApp = express();
 const distPath = path.join(__dirname, '../frontend/dist');
-
-// Serve HLS Media files from the frontend server with explicit CORS headers
-// This bypasses the node-media-server v4 CORS bug completely
-frontendApp.use('/live', require('cors')(), express.static(path.join(__dirname, 'media', 'live')));
 
 // Serve the static React build
 frontendApp.use(express.static(distPath));

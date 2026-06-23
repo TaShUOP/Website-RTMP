@@ -13,10 +13,8 @@ function App() {
   const [socketUrlInput, setSocketUrlInput] = useState('http://localhost:3344');
   const [streamKeyInput, setStreamKeyInput] = useState('test');
   
-  // NMS has a CORS bug in v4, so the HLS video is now explicitly served directly from the Frontend server (8865)
-  // This completely eliminates CORS issues because the video and website share the same origin!
   const [activeConfig, setActiveConfig] = useState({
-    serverUrl: 'http://localhost:8865/live',
+    serverUrl: 'http://localhost:3342/live',
     socketUrl: 'http://localhost:3344',
     streamKey: 'test'
   });
@@ -34,7 +32,7 @@ function App() {
   const [viewers, setViewers] = useState(0);
   const chatMessagesRef = useRef(null);
 
-  const streamUrl = `${activeConfig.serverUrl}/${activeConfig.streamKey}/index.m3u8`;
+  const streamUrl = `${activeConfig.serverUrl}/${activeConfig.streamKey}.flv`;
 
   useEffect(() => {
     if (!socket) return;

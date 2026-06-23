@@ -1,112 +1,56 @@
 import React, { useEffect, useRef } from 'react';
-import Hls from 'hls.js';
+import flvjs from 'flv.js';
 
 const VideoPlayer = ({ streamUrl }) => {
   const videoRef = useRef(null);
 
   useEffect(() => {
-    const video = videoRef.current;
-    let hls = null;
-    let retryTimeout = null;
+    let flvPlayer = null;
 
-    const initPlayer = () => {
-      // 1. hls.js Support (Desktop / Android / modern browsers with MSE)
-      if (Hls.isSupported()) {
-        hls = new Hls({
-          maxLiveSyncPlaybackRate: 1.5,
+    if (flvjs.isSupported()) {
+      flvPlayer = flvjs.createPlayer({
+        type: 'flv',
+        isLive: true,
+        hasAudio: true,
+        hasVideo: true,
+        url: streamUrl,
+      }, {
+        enableStashBuffer: false,
+        isLive: true,
+        lazyLoad: false
+      });
+
+      flvPlayer.attachMediaElement(videoRef.current);
+      flvPlayer.load();
+      
+      const playPromise = flvPlayer.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((e) => {
+          console.log('Auto-play was prevented or failed:', e);
         });
-
-        hls.loadSource(streamUrl);
-        hls.attachMedia(video);
-
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          const playPromise = video.play();
-          if (playPromise !== undefined) {
-            playPromise.catch(e => console.error("HLS Auto-play prevented:", e));
-          }
-        });
-
-        hls.on(Hls.Events.ERROR, (event, data) => {
-          if (data.fatal) {
-            switch(data.type) {
-              case Hls.ErrorTypes.NETWORK_ERROR:
-                console.log('HLS Network Error, trying to recover...');
-                // If it's a manifest load error (404 because OBS just started), we must explicitly reload the source
-                if (data.details === Hls.ErrorDetails.MANIFEST_LOAD_ERROR || data.details === Hls.ErrorDetails.MANIFEST_LOAD_TIMEOUT) {
-                  setTimeout(() => {
-                    if (hls) {
-                      hls.loadSource(streamUrl);
-                      hls.startLoad();
-                    }
-                  }, 2000);
-                } else {
-                  hls.startLoad();
-                }
-                break;
-              case Hls.ErrorTypes.MEDIA_ERROR:
-                console.log('HLS Media Error, trying to recover...');
-                hls.recoverMediaError();
-                break;
-              default:
-                hls.destroy();
-                break;
-            }
-          }
-        });
-      } 
-      // 2. Native HLS Support (iOS / iPhones / Safari)
-      else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        const loadNativeHls = () => {
-          video.src = streamUrl;
-          video.load();
-          const playPromise = video.play();
-          if (playPromise !== undefined) {
-            playPromise.catch(e => console.error("Native HLS Auto-play prevented:", e));
-          }
-        };
-
-        const handleNativeError = () => {
-          console.log("Native HLS stream not ready yet, retrying in 3 seconds...");
-          retryTimeout = setTimeout(loadNativeHls, 3000);
-        };
-
-        video.addEventListener('error', handleNativeError);
-        loadNativeHls();
-
-        // Save reference to remove listener on cleanup
-        video._handleError = handleNativeError;
       }
-    };
-
-    initPlayer();
+    }
 
     return () => {
-      if (hls) {
-        hls.destroy();
-        hls = null;
-      }
-      if (retryTimeout) {
-        clearTimeout(retryTimeout);
-      }
-      if (video) {
-        if (video._handleError) {
-          video.removeEventListener('error', video._handleError);
-        }
-        video.removeAttribute('src');
-        video.load();
+      if (flvPlayer) {
+        flvPlayer.pause();
+        flvPlayer.unload();
+        flvPlayer.detachMediaElement();
+        flvPlayer.destroy();
       }
     };
   }, [streamUrl]);
 
   return (
-    <video
-      ref={videoRef}
-      className="player"
-      controls
-      muted
-      autoPlay
-      playsInline
-    />
+    <div className="w-full h-full bg-black flex items-center justify-center overflow-hidden">
+      <video 
+        ref={videoRef} 
+        controls 
+        muted
+        playsInline
+        className="w-full h-full object-contain"
+      />
+    </div>
   );
 };
 
