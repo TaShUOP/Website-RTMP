@@ -6,8 +6,8 @@ This project is a full-stack live streaming platform that allows you to ingest a
 
 The repository is divided into two main parts:
 
-1. **Backend (`/backend`)**: A Node.js media server built with `node-media-server` and `socket.io`. It ingests the incoming RTMP stream on port `3343` and transcodes/repackages it on the fly into an HTTP-FLV stream (port `3342`). It also powers the real-time Live Chat API independently on port `3344` and acts as the production web server serving the frontend on port `8865`.
-2. **Frontend (`/frontend`)**: A React web application powered by Vite. It features a custom-designed, World Cup 2026 themed interface (dark mode, neon concentric backgrounds, glassmorphism). It uses `flv.js` for ultra-low latency video playback and `socket.io-client` for live chat.
+1. **Backend (`/backend`)**: A Node.js media server built with `node-media-server` and `socket.io`. It ingests the incoming RTMP stream on port `3343` and automatically packages it on the fly into an **HLS playlist** using FFmpeg. It also powers the real-time Live Chat API independently on port `3344` and acts as the production web server serving the frontend on port `8865`.
+2. **Frontend (`/frontend`)**: A React web application powered by Vite. It features a custom-designed, World Cup 2026 themed interface (dark mode, neon concentric backgrounds, glassmorphism). It uses **`hls.js`** for unified, stable video playback across Desktop and Android, and automatically falls back to native HLS for iOS devices (iPhone/iPad).
 
 ---
 
@@ -61,6 +61,9 @@ docker run -p 8865:8865 -p 3342:3342 -p 3343:3343 -p 3344:3344 -d wc26-live
 
 *Navigate your browser to `http://localhost:8865` to view the site.*
 
+> 📱 **Testing on an iPhone/Mobile Device?** 
+> If you open the website on your phone over Wi-Fi, you **MUST** click the "Settings" button in the top right of the website and change the Stream URL and Chat URL from `localhost` to your computer's actual local IP address (e.g., `192.168.1.5`). Otherwise, your phone will search inside itself for the video and the screen will remain blank!
+
 ---
 
 ## 🎥 How to Start Streaming (OBS Studio)
@@ -85,17 +88,14 @@ By default, the web interface attempts to connect to the video stream and chat v
 **How to permanently change the default URL:**
 
 1. Open the file: `frontend/src/App.jsx`
-2. Update the `socket.io` connection URL at the very top of the file to point to your public address:
-   ```javascript
-   const socket = io('http://your-public-ip-or-domain:3344');
-   ```
-3. Locate the `activeConfig` state block near line 17 and update the default values:
+2. Locate the `activeConfig` state block near line 16 and update the default values to point to your public IP or domain:
    ```javascript
    const [activeConfig, setActiveConfig] = useState({
      serverUrl: 'http://your-public-ip-or-domain:3342/live',
+     socketUrl: 'http://your-public-ip-or-domain:3344',
      streamKey: 'your-stream-key'
    });
    ```
-4. **Apply Changes**: 
+3. **Apply Changes**: 
    - If running **manually**, simply refresh your browser (Vite will auto-reload).
    - If using **Docker**, rebuild your Docker image (`docker build -t wc26-live .`) to bake these new URLs into the static frontend files!
