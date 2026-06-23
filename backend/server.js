@@ -16,10 +16,6 @@ const config = {
     port: 3342, // HTTP Streaming (FLV and HLS) and API
     allow_origin: '*',
     host: '0.0.0.0'
-  },
-  static: {
-    router: '/',
-    root: path.join(__dirname, 'media')
   }
 };
 
@@ -116,10 +112,20 @@ io.on('connection', (socket) => {
   });
 });
 
-// Dedicated Frontend Server on port 8865
+// Serve Frontend (Port 8865)
 const frontendApp = express();
 const distPath = path.join(__dirname, '../frontend/dist');
 
+// Serve HLS Media files from the frontend server with explicit CORS headers
+// This bypasses the node-media-server v4 CORS bug completely
+frontendApp.use('/live', (req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  next();
+}, express.static(path.join(__dirname, 'media', 'live')));
+
+// Serve the static React build
 frontendApp.use(express.static(distPath));
 
 frontendApp.use((req, res) => {
