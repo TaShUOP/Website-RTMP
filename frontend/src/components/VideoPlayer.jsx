@@ -42,13 +42,13 @@ const VideoPlayer = ({ streamUrl }) => {
   }, [streamUrl]);
 
   return (
-    <div className="w-full h-full bg-black flex items-center justify-center overflow-hidden">
+    <div className="player">
       <video 
         ref={videoRef} 
         controls 
         muted
         playsInline
-        className="w-full h-full object-contain"
+        className="player"
       />
     </div>
   );

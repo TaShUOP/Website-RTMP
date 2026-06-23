@@ -13,12 +13,9 @@ function App() {
   const [socketUrlInput, setSocketUrlInput] = useState('http://localhost:3344');
   const [streamKeyInput, setStreamKeyInput] = useState('test');
   
-  const protocol = window.location.protocol;
-  const hostname = window.location.hostname;
-  
   const [activeConfig, setActiveConfig] = useState({
-    serverUrl: `${protocol}//${hostname}:3342/live`,
-    socketUrl: `${protocol}//${hostname}:3344`,
+    serverUrl: 'http://localhost:3342/live',
+    socketUrl: 'http://localhost:3344',
     streamKey: 'test'
   });
 
