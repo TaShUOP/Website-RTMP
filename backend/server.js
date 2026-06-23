@@ -15,8 +15,11 @@ const config = {
   http: {
     port: 3342, // HTTP Streaming (FLV and HLS) and API
     allow_origin: '*',
-    host: '0.0.0.0',
-    mediaroot: path.join(__dirname, 'media')
+    host: '0.0.0.0'
+  },
+  static: {
+    router: '/',
+    root: path.join(__dirname, 'media')
   }
 };
 
