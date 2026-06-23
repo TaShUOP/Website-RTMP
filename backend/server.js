@@ -27,7 +27,10 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const ffmpegProcesses = new Map();
 
-nms.on('postPublish', (id, StreamPath, args) => {
+nms.on('postPublish', (session) => {
+  const StreamPath = session.streamPath;
+  const id = session.id;
+  
   console.log(`[HLS] Stream started on ${StreamPath}. Spawning FFmpeg...`);
   
   // Create output directory for HLS segments (e.g. ./media/live/test)
@@ -35,7 +38,7 @@ nms.on('postPublish', (id, StreamPath, args) => {
   fs.mkdirSync(hlsDir, { recursive: true });
   
   const ffmpegCmd = spawn('ffmpeg', [
-    '-i', `rtmp://127.0.0.1:3343${StreamPath}`,
+    '-i', `rtmp://localhost:3343${StreamPath}`,
     '-c:v', 'copy',
     '-c:a', 'copy',
     '-f', 'hls',
@@ -52,7 +55,10 @@ nms.on('postPublish', (id, StreamPath, args) => {
   ffmpegProcesses.set(id, ffmpegCmd);
 });
 
-nms.on('donePublish', (id, StreamPath, args) => {
+nms.on('donePublish', (session) => {
+  const StreamPath = session.streamPath;
+  const id = session.id;
+
   if (ffmpegProcesses.has(id)) {
     console.log(`[HLS] Stream ended on ${StreamPath}. Killing FFmpeg...`);
     ffmpegProcesses.get(id).kill();
