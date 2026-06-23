@@ -19,7 +19,7 @@ const config = {
     mediaroot: './media'
   },
   trans: {
-    ffmpeg: 'ffmpeg', // requires ffmpeg installed in system PATH or container
+    ffmpeg: '/usr/bin/ffmpeg', // Use absolute path for Alpine Linux
     tasks: [
       {
         app: 'live',

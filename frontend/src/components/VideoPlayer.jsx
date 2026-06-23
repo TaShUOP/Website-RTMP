@@ -10,9 +10,36 @@ const VideoPlayer = ({ streamUrl }) => {
     let flvPlayer = null;
     let hlsRetryTimeout = null;
 
-    // 1. FLV.js Support (Desktop / Android / Chrome / Firefox / Edge)
-    // We prioritize FLV because it offers ultra-low latency.
-    if (flvjs.isSupported()) {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                  (navigator.userAgent.includes("Mac") && "ontouchend" in document);
+
+    // Force HLS on iOS (because recent iOS versions falsely claim flv.js support but fail to play it)
+    // Otherwise, use FLV if supported (for ultra-low latency on Desktop/Android)
+    const useHLS = (isIOS && videoElement.canPlayType('application/vnd.apple.mpegurl')) || 
+                   (!flvjs.isSupported() && videoElement.canPlayType('application/vnd.apple.mpegurl'));
+
+    if (useHLS) {
+      const loadHls = () => {
+        videoElement.src = hlsUrl;
+        videoElement.load(); // explicitly tell iOS to load the new src
+        const playPromise = videoElement.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(error => console.error("HLS Auto-play prevented:", error));
+        }
+      };
+
+      const handleError = () => {
+        console.log("HLS stream not ready yet, retrying in 3 seconds...");
+        hlsRetryTimeout = setTimeout(loadHls, 3000);
+      };
+
+      videoElement.addEventListener('error', handleError);
+      loadHls();
+
+      // Ensure we remove the error listener when cleaning up
+      videoElement._handleError = handleError;
+    } 
+    else if (flvjs.isSupported()) {
       flvPlayer = flvjs.createPlayer({
         type: 'flv',
         isLive: true,
@@ -34,28 +61,6 @@ const VideoPlayer = ({ streamUrl }) => {
       if (playPromise !== undefined) {
         playPromise.catch(error => console.error("FLV Auto-play prevented:", error));
       }
-    }
-    // 2. Native HLS Support (iOS / iPhones / Safari)
-    else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
-      const loadHls = () => {
-        videoElement.src = hlsUrl;
-        videoElement.load(); // explicitly tell iOS to load the new src
-        const playPromise = videoElement.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(error => console.error("HLS Auto-play prevented:", error));
-        }
-      };
-
-      const handleError = () => {
-        console.log("HLS stream not ready yet, retrying in 3 seconds...");
-        hlsRetryTimeout = setTimeout(loadHls, 3000);
-      };
-
-      videoElement.addEventListener('error', handleError);
-      loadHls();
-
-      // Ensure we remove the error listener when cleaning up
-      videoElement._handleError = handleError;
     }
 
     return () => {
