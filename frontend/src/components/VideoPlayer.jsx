@@ -30,9 +30,18 @@ const VideoPlayer = ({ streamUrl }) => {
           if (data.fatal) {
             switch(data.type) {
               case Hls.ErrorTypes.NETWORK_ERROR:
-                // Network error (e.g. stream not started yet). Retry logic.
                 console.log('HLS Network Error, trying to recover...');
-                hls.startLoad();
+                // If it's a manifest load error (404 because OBS just started), we must explicitly reload the source
+                if (data.details === Hls.ErrorDetails.MANIFEST_LOAD_ERROR || data.details === Hls.ErrorDetails.MANIFEST_LOAD_TIMEOUT) {
+                  setTimeout(() => {
+                    if (hls) {
+                      hls.loadSource(streamUrl);
+                      hls.startLoad();
+                    }
+                  }, 2000);
+                } else {
+                  hls.startLoad();
+                }
                 break;
               case Hls.ErrorTypes.MEDIA_ERROR:
                 console.log('HLS Media Error, trying to recover...');

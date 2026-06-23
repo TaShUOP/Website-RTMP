@@ -118,12 +118,7 @@ const distPath = path.join(__dirname, '../frontend/dist');
 
 // Serve HLS Media files from the frontend server with explicit CORS headers
 // This bypasses the node-media-server v4 CORS bug completely
-frontendApp.use('/live', (req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-  next();
-}, express.static(path.join(__dirname, 'media', 'live')));
+frontendApp.use('/live', require('cors')(), express.static(path.join(__dirname, 'media', 'live')));
 
 // Serve the static React build
 frontendApp.use(express.static(distPath));
