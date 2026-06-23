@@ -32,7 +32,7 @@ function App() {
   const [viewers, setViewers] = useState(0);
   const chatMessagesRef = useRef(null);
 
-  const streamUrl = `${activeConfig.serverUrl}/${activeConfig.streamKey}.flv`;
+  const streamUrl = `${activeConfig.serverUrl}/${activeConfig.streamKey}/index.m3u8`;
 
   useEffect(() => {
     if (!socket) return;

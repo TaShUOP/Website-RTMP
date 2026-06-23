@@ -1,87 +1,90 @@
 import React, { useEffect, useRef } from 'react';
-import flvjs from 'flv.js';
+import Hls from 'hls.js';
 
 const VideoPlayer = ({ streamUrl }) => {
   const videoRef = useRef(null);
 
   useEffect(() => {
-    const videoElement = videoRef.current;
-    const hlsUrl = streamUrl.replace('.flv', '/index.m3u8');
-    let flvPlayer = null;
-    let hlsRetryTimeout = null;
+    const video = videoRef.current;
+    let hls = null;
+    let retryTimeout = null;
 
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                  (navigator.userAgent.includes("Mac") && "ontouchend" in document);
+    const initPlayer = () => {
+      // 1. hls.js Support (Desktop / Android / modern browsers with MSE)
+      if (Hls.isSupported()) {
+        hls = new Hls({
+          maxLiveSyncPlaybackRate: 1.5,
+        });
 
-    // Force HLS on iOS (because recent iOS versions falsely claim flv.js support but fail to play it)
-    // Otherwise, use FLV if supported (for ultra-low latency on Desktop/Android)
-    const useHLS = (isIOS && videoElement.canPlayType('application/vnd.apple.mpegurl')) || 
-                   (!flvjs.isSupported() && videoElement.canPlayType('application/vnd.apple.mpegurl'));
+        hls.loadSource(streamUrl);
+        hls.attachMedia(video);
 
-    if (useHLS) {
-      const loadHls = () => {
-        videoElement.src = hlsUrl;
-        videoElement.load(); // explicitly tell iOS to load the new src
-        const playPromise = videoElement.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(error => console.error("HLS Auto-play prevented:", error));
-        }
-      };
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+          const playPromise = video.play();
+          if (playPromise !== undefined) {
+            playPromise.catch(e => console.error("HLS Auto-play prevented:", e));
+          }
+        });
 
-      const handleError = () => {
-        console.log("HLS stream not ready yet, retrying in 3 seconds...");
-        hlsRetryTimeout = setTimeout(loadHls, 3000);
-      };
+        hls.on(Hls.Events.ERROR, (event, data) => {
+          if (data.fatal) {
+            switch(data.type) {
+              case Hls.ErrorTypes.NETWORK_ERROR:
+                // Network error (e.g. stream not started yet). Retry logic.
+                console.log('HLS Network Error, trying to recover...');
+                hls.startLoad();
+                break;
+              case Hls.ErrorTypes.MEDIA_ERROR:
+                console.log('HLS Media Error, trying to recover...');
+                hls.recoverMediaError();
+                break;
+              default:
+                hls.destroy();
+                break;
+            }
+          }
+        });
+      } 
+      // 2. Native HLS Support (iOS / iPhones / Safari)
+      else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        const loadNativeHls = () => {
+          video.src = streamUrl;
+          video.load();
+          const playPromise = video.play();
+          if (playPromise !== undefined) {
+            playPromise.catch(e => console.error("Native HLS Auto-play prevented:", e));
+          }
+        };
 
-      videoElement.addEventListener('error', handleError);
-      loadHls();
+        const handleNativeError = () => {
+          console.log("Native HLS stream not ready yet, retrying in 3 seconds...");
+          retryTimeout = setTimeout(loadNativeHls, 3000);
+        };
 
-      // Ensure we remove the error listener when cleaning up
-      videoElement._handleError = handleError;
-    } 
-    else if (flvjs.isSupported()) {
-      flvPlayer = flvjs.createPlayer({
-        type: 'flv',
-        isLive: true,
-        url: streamUrl,
-      }, {
-        enableWorker: false,
-        enableStashBuffer: false,
-        stashInitialSize: 128,
-      });
+        video.addEventListener('error', handleNativeError);
+        loadNativeHls();
 
-      flvPlayer.attachMediaElement(videoElement);
-      flvPlayer.load();
-      
-      flvPlayer.on(flvjs.Events.ERROR, (errorType, errorDetail, errorInfo) => {
-        console.error('FLV.js Error:', errorType, errorDetail, errorInfo);
-      });
-
-      const playPromise = flvPlayer.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(error => console.error("FLV Auto-play prevented:", error));
+        // Save reference to remove listener on cleanup
+        video._handleError = handleNativeError;
       }
-    }
+    };
+
+    initPlayer();
 
     return () => {
-      if (hlsRetryTimeout) {
-        clearTimeout(hlsRetryTimeout);
+      if (hls) {
+        hls.destroy();
+        hls = null;
       }
-      if (flvPlayer) {
-        flvPlayer.pause();
-        flvPlayer.unload();
-        flvPlayer.detachMediaElement();
-        flvPlayer.destroy();
-        flvPlayer = null;
+      if (retryTimeout) {
+        clearTimeout(retryTimeout);
       }
-      
-      // Cleanup for native HLS
-      if (videoElement) {
-        if (videoElement._handleError) {
-          videoElement.removeEventListener('error', videoElement._handleError);
+      if (video) {
+        if (video._handleError) {
+          video.removeEventListener('error', video._handleError);
         }
-        videoElement.removeAttribute('src');
-        videoElement.load();
+        video.removeAttribute('src');
+        video.load();
       }
     };
   }, [streamUrl]);
