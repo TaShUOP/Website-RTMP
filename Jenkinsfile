@@ -38,6 +38,7 @@ VITE_STREAM_KEY=${STREAM_KEY}
 
         stage('Build Docker Image') {
             steps {
+		sh "whoami"
                 sh """
                     docker build \
                         -t ${IMAGE_NAME}:${IMAGE_TAG} \
