@@ -9,14 +9,14 @@ function App() {
   const [usernameInput, setUsernameInput] = useState('');
 
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [serverUrlInput, setServerUrlInput] = useState('http://localhost:3342/live');
-  const [socketUrlInput, setSocketUrlInput] = useState('http://localhost:3344');
-  const [streamKeyInput, setStreamKeyInput] = useState('test');
+  const [serverUrlInput, setServerUrlInput] = useState(import.meta.env.VITE_SERVER_URL || 'http://localhost:3342/live');
+  const [socketUrlInput, setSocketUrlInput] = useState(import.meta.env.VITE_SOCKET_URL || 'http://localhost:3344');
+  const [streamKeyInput, setStreamKeyInput] = useState(import.meta.env.VITE_STREAM_KEY || 'test');
   
   const [activeConfig, setActiveConfig] = useState({
     serverUrl: import.meta.env.VITE_SERVER_URL || 'http://localhost:3342/live',
     socketUrl: import.meta.env.VITE_SOCKET_URL || 'http://localhost:3344',
-    streamKey: import.meta.env.VITE_STREAM_KEY || 'worldcup'
+    streamKey: import.meta.env.VITE_STREAM_KEY || 'test'
   });
 
   const [socket, setSocket] = useState(null);
@@ -117,16 +117,10 @@ function App() {
             <span className="brand-mark">●</span>
             <span className="brand-name">WC26<span className="brand-name-accent">LIVE</span></span>
           </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <a href="/ios/" className="btn-settings" style={{ background: 'var(--live-red)', color: 'white', border: 'none', textDecoration: 'none' }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20.94c1.5 0 2.75 1.06 4 1.06 3 0 6-8 6-12.22A4.91 4.91 0 0 0 17 5c-2.22 0-4 1.44-5 1.44S9.22 5 7 5a4.91 4.91 0 0 0-5 4.78C2 14 5 22 8 22c1.25 0 2.5-1.06 4-1.06Z"/><path d="M10 2c1 .5 2 2 2 5"/></svg>
-              iOS Player
-            </a>
-            <button className="btn-settings" onClick={() => setIsSettingsModalOpen(true)} type="button">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-              Settings
-            </button>
-          </div>
+          <button className="btn-settings" onClick={() => setIsSettingsModalOpen(true)} type="button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Settings
+          </button>
           <div className="live-badge">
             <span className="live-dot"></span> LIVE
           </div>
