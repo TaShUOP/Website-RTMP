@@ -38,12 +38,30 @@ const io = new Server(3344, {
   }
 });
 
+// Store chat history in memory
+let chatHistory = [];
+
+// Clear chat history every 12 hours
+setInterval(() => {
+  chatHistory = [];
+  io.emit('history', chatHistory); // Tell all clients to clear their screens
+  console.log('[Chat] History cleared (12-hour interval)');
+}, 12 * 60 * 60 * 1000);
+
 io.on('connection', (socket) => {
   console.log('User connected to chat');
+  // Send existing chat history to the new user
+  socket.emit('history', chatHistory);
   // Broadcast the number of connected clients to all clients
   io.emit('viewers', io.engine.clientsCount);
   
   socket.on('chat_message', (msg) => {
+    // Save message to history
+    chatHistory.push(msg);
+    // Optional: Keep history reasonably sized (e.g. max 500 messages) to prevent memory leaks over 12 hours
+    if (chatHistory.length > 500) {
+      chatHistory.shift();
+    }
     // Broadcast message to all connected clients
     io.emit('chat_message', msg);
   });
