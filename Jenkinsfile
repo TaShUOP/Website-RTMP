@@ -71,13 +71,7 @@ VITE_STREAM_KEY=${STREAM_KEY}
                 """
             }
         }
-
-        stage('Cleanup') {
-            steps {
-                sh "docker image prune -f"
-            }
-        }
-    }
+ }
 
     post {
         success {
@@ -87,10 +81,6 @@ VITE_STREAM_KEY=${STREAM_KEY}
 
         failure {
             echo "Deployment Failed!"
-        }
-
-        always {
-            cleanWs()
         }
     }
 }
