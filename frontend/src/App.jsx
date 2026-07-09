@@ -14,9 +14,9 @@ function App() {
   const [streamKeyInput, setStreamKeyInput] = useState('test');
   
   const [activeConfig, setActiveConfig] = useState({
-    serverUrl: 'http://localhost:3342/live',
-    socketUrl: 'http://localhost:3344',
-    streamKey: 'test'
+    serverUrl: import.meta.env.VITE_SERVER_URL || 'http://localhost:3342/live',
+    socketUrl: import.meta.env.VITE_SOCKET_URL || 'http://localhost:3344',
+    streamKey: import.meta.env.VITE_STREAM_KEY || 'worldcup'
   });
 
   const [socket, setSocket] = useState(null);
