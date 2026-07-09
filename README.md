@@ -92,19 +92,21 @@ No matter which method you used to start the server, you can stream to it using 
 
 ### Changing the Default Stream URL for Viewers
 
-By default, the web interface attempts to connect to the video stream and chat via `localhost`. If you are hosting this server on a public IP address or a domain name, you should change the default connection strings in the code. **This ensures your viewers don't have to manually open the Settings panel and type your IP address every time they visit the website!**
+By default, the web interface attempts to connect to the video stream and chat via `localhost`. If you are hosting this server on a public IP address or a domain name, you should configure the default connection strings. **This ensures your viewers don't have to manually open the Settings panel and type your IP address every time they visit the website!**
 
-**How to permanently change the default URL:**
+**How to configure the default URLs:**
 
-1. Open the file: `frontend/src/App.jsx`
-2. Locate the `activeConfig` state block near line 16 and update the default values to point to your public IP or domain:
-   ```javascript
-   const [activeConfig, setActiveConfig] = useState({
-     serverUrl: 'http://your-public-ip-or-domain:3342/live',
-     socketUrl: 'http://your-public-ip-or-domain:3344',
-     streamKey: 'your-stream-key'
-   });
+You can easily configure these default URLs by creating a `.env.production` file in your `frontend/` directory before building the Docker image.
+
+1. Create a file named `.env.production` in the `frontend/` folder with the following contents:
+   ```env
+   VITE_SERVER_URL=http://your-public-ip-or-domain:3342/live
+   VITE_SOCKET_URL=http://your-public-ip-or-domain:3344
+   VITE_STREAM_KEY=your-stream-key
    ```
-3. **Apply Changes**: 
-   - If running **manually**, simply refresh your browser (Vite will auto-reload).
-   - If using **Docker**, rebuild your Docker image (`docker build -t wc26-live .`) to bake these new URLs into the static frontend files!
+2. **Apply Changes**: 
+   - If running **manually**, simply restart your Vite dev server (`npm run dev`).
+   - If using **Docker**, just build the image as normal! Docker will automatically copy your `.env.production` file and Vite will seamlessly bake the variables into your static frontend!
+   ```bash
+   docker build -t wc26-live .
+   ```
