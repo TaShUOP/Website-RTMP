@@ -28,8 +28,18 @@ let ffmpegProcess = null;
 const mediaPath = path.join(__dirname, 'media/live');
 fs.mkdirSync(mediaPath, { recursive: true });
 
-nms.on('postPublish', (session) => {
-  const streamPath = session.streamPath;
+nms.on('postPublish', (...args) => {
+  console.log(`[RTMP] postPublish event triggered with args:`, args);
+  
+  // NMS docs say (id, StreamPath, args), but sometimes it is just (id, StreamPath)
+  // Let's dynamically find the string argument that starts with '/'
+  const streamPath = args.find(arg => typeof arg === 'string' && arg.startsWith('/'));
+  
+  if (!streamPath) {
+    console.log(`[RTMP] Error: Could not determine StreamPath from args!`);
+    return;
+  }
+  
   console.log(`[RTMP] Stream published on ${streamPath}`);
   
   const streamKey = streamPath.split('/').pop();
@@ -55,9 +65,12 @@ nms.on('postPublish', (session) => {
   });
 });
 
-nms.on('donePublish', (session) => {
-  const streamPath = session.streamPath;
-  console.log(`[RTMP] Stream ended on ${streamPath}`);
+nms.on('donePublish', (...args) => {
+  console.log(`[RTMP] donePublish event triggered with args:`, args);
+  const streamPath = args.find(arg => typeof arg === 'string' && arg.startsWith('/'));
+  if (streamPath) {
+    console.log(`[RTMP] Stream ended on ${streamPath}`);
+  }
   if (ffmpegProcess) {
     ffmpegProcess.kill('SIGINT');
     ffmpegProcess = null;
