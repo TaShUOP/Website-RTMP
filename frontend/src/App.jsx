@@ -1,9 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
+import flvjs from 'flv.js';
 import VideoPlayer from './components/VideoPlayer';
 // Socket will be initialized dynamically inside the component
 
 function App() {
+  useEffect(() => {
+    // Redirect to the native HLS player if FLV is not supported (e.g. iOS)
+    if (!flvjs.isSupported()) {
+      window.location.href = '/ios/';
+    }
+  }, []);
   const [username, setUsername] = useState(() => localStorage.getItem('wc26_username') || '');
   const [isUsernameModalOpen, setIsUsernameModalOpen] = useState(!localStorage.getItem('wc26_username'));
   const [usernameInput, setUsernameInput] = useState('');

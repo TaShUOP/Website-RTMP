@@ -2,6 +2,8 @@ const NodeMediaServer = require('node-media-server');
 const { Server } = require('socket.io');
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
+const { spawn } = require('child_process');
 
 const config = {
   rtmp: {
@@ -22,12 +24,42 @@ const config = {
 const nms = new NodeMediaServer(config);
 nms.run();
 
-nms.on('postPublish', (session) => {
-  console.log(`[RTMP] Stream published on ${session.streamPath}`);
+let ffmpegProcess = null;
+const mediaPath = path.join(__dirname, 'media/live');
+fs.mkdirSync(mediaPath, { recursive: true });
+
+nms.on('postPublish', (id, StreamPath, args) => {
+  console.log(`[RTMP] Stream published on ${StreamPath}`);
+  
+  const streamKey = StreamPath.split('/').pop();
+  const streamDir = path.join(mediaPath, streamKey);
+  fs.mkdirSync(streamDir, { recursive: true });
+
+  const inputUrl = `rtmp://localhost:3343${StreamPath}`;
+  
+  ffmpegProcess = spawn('ffmpeg', [
+    '-i', inputUrl,
+    '-c:v', 'copy',
+    '-c:a', 'aac',
+    '-b:a', '128k',
+    '-f', 'hls',
+    '-hls_time', '2',
+    '-hls_list_size', '3',
+    '-hls_flags', 'delete_segments',
+    path.join(streamDir, 'index.m3u8')
+  ]);
+
+  ffmpegProcess.on('close', (code) => {
+    console.log(`[FFmpeg] Exited with code ${code}`);
+  });
 });
 
-nms.on('donePublish', (session) => {
-  console.log(`[RTMP] Stream ended on ${session.streamPath}`);
+nms.on('donePublish', (id, StreamPath, args) => {
+  console.log(`[RTMP] Stream ended on ${StreamPath}`);
+  if (ffmpegProcess) {
+    ffmpegProcess.kill('SIGINT');
+    ffmpegProcess = null;
+  }
 });
 
 // Socket.IO Server on an independent port (3344)
@@ -76,6 +108,15 @@ io.on('connection', (socket) => {
 // Serve Frontend (Port 8865)
 const frontendApp = express();
 const distPath = path.join(__dirname, '../frontend/dist');
+
+// Serve HLS streams with CORS
+frontendApp.use('/hls', (req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+}, express.static(path.join(__dirname, 'media')));
 
 // Serve the static React build
 frontendApp.use(express.static(distPath));
