@@ -120,8 +120,23 @@
       const hostname = window.location.hostname;
       const hlsUrl = `${protocol}//${hostname}:8865/hls/live/${streamKey}/index.m3u8`;
       
-      video.src = hlsUrl;
-      video.play().catch(e => console.log('Autoplay blocked:', e));
+      // FFmpeg takes a few seconds to write the first HLS chunks to disk. 
+      // If we request it instantly, we get a 404 and Safari gives up.
+      // So we poll the URL with HEAD requests until it's ready!
+      function pollForStream() {
+        fetch(hlsUrl, { method: 'HEAD' })
+          .then(res => {
+            if (res.ok) {
+              video.src = hlsUrl;
+              video.play().catch(e => console.log('Autoplay blocked:', e));
+            } else {
+              setTimeout(pollForStream, 1500); // Try again in 1.5 seconds
+            }
+          })
+          .catch(() => setTimeout(pollForStream, 1500));
+      }
+      
+      pollForStream();
     }
 
     loadVideo();

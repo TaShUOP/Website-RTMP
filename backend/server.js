@@ -56,6 +56,14 @@ nms.on('postPublish', (session) => {
     path.join(streamDir, 'index.m3u8')
   ]);
 
+  ffmpegProcess.stderr.on('data', (data) => {
+    console.log(`[FFmpeg Error]: ${data.toString()}`);
+  });
+
+  ffmpegProcess.on('error', (err) => {
+    console.log(`[FFmpeg Spawn Error]:`, err);
+  });
+
   ffmpegProcess.on('close', (code) => {
     console.log(`[FFmpeg] Exited with code ${code}`);
   });
