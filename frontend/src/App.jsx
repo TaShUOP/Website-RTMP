@@ -5,12 +5,7 @@ import VideoPlayer from './components/VideoPlayer';
 // Socket will be initialized dynamically inside the component
 
 function App() {
-  useEffect(() => {
-    // Redirect to the native HLS player if FLV is not supported (e.g. iOS)
-    if (!flvjs.isSupported()) {
-      window.location.href = `/ios/?streamKey=${activeConfig.streamKey}`;
-    }
-  }, [activeConfig.streamKey]);
+
   const [username, setUsername] = useState(() => localStorage.getItem('wc26_username') || '');
   const [isUsernameModalOpen, setIsUsernameModalOpen] = useState(!localStorage.getItem('wc26_username'));
   const [usernameInput, setUsernameInput] = useState('');
@@ -25,6 +20,13 @@ function App() {
     socketUrl: import.meta.env.VITE_SOCKET_URL || 'http://localhost:3344',
     streamKey: import.meta.env.VITE_STREAM_KEY || 'test'
   });
+
+  useEffect(() => {
+    // Redirect to the native HLS player if FLV is not supported (e.g. iOS)
+    if (!flvjs.isSupported()) {
+      window.location.href = `/ios/?streamKey=${activeConfig.streamKey}`;
+    }
+  }, [activeConfig.streamKey]);
 
   const [socket, setSocket] = useState(null);
 
