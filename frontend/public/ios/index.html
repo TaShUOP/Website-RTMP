@@ -116,6 +116,12 @@
     const video = document.getElementById('iosPlayer');
     const streamKeyInput = document.getElementById('streamKeyInput');
     
+    // Parse streamKey from URL query parameters (passed from App.jsx)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('streamKey')) {
+      streamKeyInput.value = urlParams.get('streamKey');
+    }
+    
     function loadVideo() {
       const protocol = window.location.protocol;
       const hostname = window.location.hostname;

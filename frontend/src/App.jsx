@@ -8,9 +8,9 @@ function App() {
   useEffect(() => {
     // Redirect to the native HLS player if FLV is not supported (e.g. iOS)
     if (!flvjs.isSupported()) {
-      window.location.href = '/ios/';
+      window.location.href = `/ios/?streamKey=${activeConfig.streamKey}`;
     }
-  }, []);
+  }, [activeConfig.streamKey]);
   const [username, setUsername] = useState(() => localStorage.getItem('wc26_username') || '');
   const [isUsernameModalOpen, setIsUsernameModalOpen] = useState(!localStorage.getItem('wc26_username'));
   const [usernameInput, setUsernameInput] = useState('');
