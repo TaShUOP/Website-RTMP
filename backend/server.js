@@ -28,14 +28,15 @@ let ffmpegProcess = null;
 const mediaPath = path.join(__dirname, 'media/live');
 fs.mkdirSync(mediaPath, { recursive: true });
 
-nms.on('postPublish', (id, StreamPath, args) => {
-  console.log(`[RTMP] Stream published on ${StreamPath}`);
+nms.on('postPublish', (session) => {
+  const streamPath = session.streamPath;
+  console.log(`[RTMP] Stream published on ${streamPath}`);
   
-  const streamKey = StreamPath.split('/').pop();
+  const streamKey = streamPath.split('/').pop();
   const streamDir = path.join(mediaPath, streamKey);
   fs.mkdirSync(streamDir, { recursive: true });
 
-  const inputUrl = `rtmp://localhost:3343${StreamPath}`;
+  const inputUrl = `rtmp://localhost:3343${streamPath}`;
   
   ffmpegProcess = spawn('ffmpeg', [
     '-i', inputUrl,
@@ -54,8 +55,9 @@ nms.on('postPublish', (id, StreamPath, args) => {
   });
 });
 
-nms.on('donePublish', (id, StreamPath, args) => {
-  console.log(`[RTMP] Stream ended on ${StreamPath}`);
+nms.on('donePublish', (session) => {
+  const streamPath = session.streamPath;
+  console.log(`[RTMP] Stream ended on ${streamPath}`);
   if (ffmpegProcess) {
     ffmpegProcess.kill('SIGINT');
     ffmpegProcess = null;
