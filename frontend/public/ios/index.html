@@ -98,10 +98,7 @@
     <video id="iosPlayer" controls playsinline autoplay muted></video>
   </div>
 
-  <div class="config-area">
-    <label>Stream Key (Updates instantly)</label>
-    <input type="text" id="streamKeyInput" value="worldcup" placeholder="Enter stream key..." />
-  </div>
+
 
   <div class="chat-container">
     <div class="chat-messages" id="chatMessages"></div>
@@ -112,31 +109,26 @@
   </div>
 
   <script>
-    // 1. Setup Video Player (Native HLS via /hls route)
     const video = document.getElementById('iosPlayer');
-    const streamKeyInput = document.getElementById('streamKeyInput');
     
-    // Parse streamKey from URL query parameters (passed from App.jsx)
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('streamKey')) {
-      streamKeyInput.value = urlParams.get('streamKey');
-    }
+    const streamKey = urlParams.get('streamKey') || 'worldcup';
+    const parsedSocketUrl = urlParams.get('socketUrl');
     
     function loadVideo() {
       const protocol = window.location.protocol;
       const hostname = window.location.hostname;
-      // We proxy /hls through the frontend server port 8865
-      const hlsUrl = `${protocol}//${hostname}:8865/hls/live/${streamKeyInput.value}/index.m3u8`;
+      const hlsUrl = `${protocol}//${hostname}:8865/hls/live/${streamKey}/index.m3u8`;
       
       video.src = hlsUrl;
       video.play().catch(e => console.log('Autoplay blocked:', e));
     }
 
-    streamKeyInput.addEventListener('input', loadVideo);
     loadVideo();
 
     // 2. Setup Socket.IO Chat
-    const socketUrl = `${window.location.protocol}//${window.location.hostname}:3344`;
+    const defaultSocketUrl = `${window.location.protocol}//${window.location.hostname}:3344`;
+    const socketUrl = parsedSocketUrl || defaultSocketUrl;
     const socket = io(socketUrl);
     
     const chatMessages = document.getElementById('chatMessages');

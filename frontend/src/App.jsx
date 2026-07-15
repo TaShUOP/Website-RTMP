@@ -24,9 +24,13 @@ function App() {
   useEffect(() => {
     // Redirect to the native HLS player if FLV is not supported (e.g. iOS)
     if (!flvjs.isSupported()) {
-      window.location.href = `/ios/?streamKey=${activeConfig.streamKey}`;
+      const qs = new URLSearchParams({
+        streamKey: activeConfig.streamKey,
+        socketUrl: activeConfig.socketUrl
+      }).toString();
+      window.location.href = `/ios/?${qs}`;
     }
-  }, [activeConfig.streamKey]);
+  }, [activeConfig.streamKey, activeConfig.socketUrl]);
 
   const [socket, setSocket] = useState(null);
 
